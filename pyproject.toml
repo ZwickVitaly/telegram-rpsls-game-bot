@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "aiogrambottemplate"
+version = "0.1.0"
+description = "Telegram bot template for further development"
+authors = ["ZwickVitaly <zwickvitaly@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+aiogram = "^3.6.0"
+sqlalchemy = "^2.0.30"
+asyncpg = "^0.29.0"
+psycopg2-binary = "^2.9.9"
+aiosqlite = "^0.20.0"
+emoji = "^2.12.1"
+redis = "^5.0.4"
+loguru = "^0.7.2"
+markupsafe = "^2.1.5"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
