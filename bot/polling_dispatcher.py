@@ -1,26 +1,25 @@
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from aiogram.filters import CommandStart, Command
-from aiogram.methods import DeleteWebhook
+from aiogram.filters import Command, CommandStart
 from aiogram.fsm.storage.redis import RedisStorage
-from handlers import (
-    register_command_handler,
-    start_rpsls_command_handler,
-    start_command_handler_RPSLS_BOT,
-    my_chat_member_status_change_handler,
-    rpsls_choice_callback_handler,
-)
+from aiogram.methods import DeleteWebhook
 
-from dispatchers.lifespan_dispatcher import DispatcherLifespan
-from lifespan.sqlalchemy_db_creation_manager import SQLAlchemyDBCreateAsyncManager
-from db import engine, async_session, Base
 from custom_filters import rpsls_callback_filter
-from utils import redis_connection
-from settings import logger, THROTTLE_TIMER, THROTTLE_RATE, BOT_TOKEN
-from middleware import ThrottlingRedisMiddleware
+from db import Base, async_session, engine
+from dispatchers.lifespan_dispatcher import DispatcherLifespan
+from handlers import (
+    my_chat_member_status_change_handler,
+    register_command_handler,
+    rpsls_choice_callback_handler,
+    start_command_handler_RPSLS_BOT,
+    start_rpsls_command_handler,
+)
+from lifespan.sqlalchemy_db_creation_manager import SQLAlchemyDBCreateAsyncManager
 from messages import THROTTLED_MESSAGE
-
+from middleware import ThrottlingRedisMiddleware
+from settings import BOT_TOKEN, THROTTLE_RATE, THROTTLE_TIMER, logger
+from utils import redis_connection
 
 logger.debug("Initializing bot instance")
 bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
@@ -31,19 +30,29 @@ storage = RedisStorage(redis_connection)
 logger.debug("Initializing dispatcher")
 dp: Dispatcher = DispatcherLifespan(
     lifespan=SQLAlchemyDBCreateAsyncManager(
-        async_db_engine=engine,
-        async_db_session=async_session,
-        db_base=Base
+        async_db_engine=engine, async_db_session=async_session, db_base=Base
     ),
 )
 
 
-logger.debug("Registering ThrottlingRedisMiddleware to messages and callback query events")
-dp.message.middleware(ThrottlingRedisMiddleware(
-    rate_limit=THROTTLE_RATE, time_limit=THROTTLE_TIMER, redis=redis_connection, message=THROTTLED_MESSAGE)
+logger.debug(
+    "Registering ThrottlingRedisMiddleware to messages and callback query events"
 )
-dp.callback_query.middleware(ThrottlingRedisMiddleware(
-    rate_limit=THROTTLE_RATE, time_limit=THROTTLE_TIMER, redis=redis_connection, message=THROTTLED_MESSAGE)
+dp.message.middleware(
+    ThrottlingRedisMiddleware(
+        rate_limit=THROTTLE_RATE,
+        time_limit=THROTTLE_TIMER,
+        redis=redis_connection,
+        message=THROTTLED_MESSAGE,
+    )
+)
+dp.callback_query.middleware(
+    ThrottlingRedisMiddleware(
+        rate_limit=THROTTLE_RATE,
+        time_limit=THROTTLE_TIMER,
+        redis=redis_connection,
+        message=THROTTLED_MESSAGE,
+    )
 )
 
 

@@ -1,20 +1,27 @@
-from aiogram.types import Message
-from aiogram.exceptions import TelegramBadRequest
-from utils import redis_connection
-from keyboards import rpsls_kb
-from helpers import is_group, try_delete_message
 import asyncio
-from settings import RPSLS_GAME_INDEX_KEY, RPSLS_START_COMMAND, RPSLS_GAME_START_TIMER, RPSLS_GAME_ROUND_TIMER, logger
+
+from aiogram.exceptions import TelegramBadRequest
+from aiogram.types import Message
+
+from helpers import is_group, try_delete_message
+from keyboards import rpsls_kb
 from messages import (
     ONLY_GROUP_REPLY_MESSAGE,
     RANDOM_RPSLS_NEW_GAME_MESSAGE,
-    RPSLS_NO_CHOICE_MESSAGE,
-    YOU_ARE_ALREADY_IN_GAME_MESSAGE,
-    RPSLS_GAME_STARTED_MESSAGE,
-    RPSLS_SECOND_PLAYER_FOUND,
     RPSLS_GAME_INVITE_EXPIRED,
+    RPSLS_GAME_STARTED_MESSAGE,
+    RPSLS_NO_CHOICE_MESSAGE,
+    RPSLS_SECOND_PLAYER_FOUND,
+    YOU_ARE_ALREADY_IN_GAME_MESSAGE,
 )
-
+from settings import (
+    RPSLS_GAME_INDEX_KEY,
+    RPSLS_GAME_ROUND_TIMER,
+    RPSLS_GAME_START_TIMER,
+    RPSLS_START_COMMAND,
+    logger,
+)
+from utils import redis_connection
 
 
 async def start_rpsls_command_handler(message: Message):
@@ -57,11 +64,13 @@ async def start_rpsls_command_handler(message: Message):
         logger.debug("Setting new game data and player_1 data")
         pipe = redis_connection.pipeline()
         (
-            pipe.hset(
-                game_name, mapping={"player_1": user_id}
-            )
+            pipe.hset(game_name, mapping={"player_1": user_id})
             .expire(game_name, RPSLS_GAME_START_TIMER)
-            .set(f"{message.chat.id}_{user_id}_rpsls_game_name", game_name, ex=RPSLS_GAME_START_TIMER)
+            .set(
+                f"{message.chat.id}_{user_id}_rpsls_game_name",
+                game_name,
+                ex=RPSLS_GAME_START_TIMER,
+            )
             .set(f"{user_id}_username", username)
         )
         pipe.execute()
@@ -75,13 +84,17 @@ async def start_rpsls_command_handler(message: Message):
         if game_exists:
             logger.debug(f"Game: {game_name} exists after invite.")
             if game_exists.get("player_2"):
-                logger.debug(f"Game: {game_name} there is a second player after invite. Passing")
+                logger.debug(
+                    f"Game: {game_name} there is a second player after invite. Passing"
+                )
             else:
                 redis_connection.delete(game_name)
                 await message.answer(RPSLS_GAME_INVITE_EXPIRED.format(username))
                 if answer_callback:
                     await answer_callback.delete()
-                logger.debug(f"Game: {game_name} no second player after invite. Expired.")
+                logger.debug(
+                    f"Game: {game_name} no second player after invite. Expired."
+                )
         else:
             logger.debug(f"Game: {game_name} does not exist after invite. All ok.")
     else:
@@ -96,20 +109,26 @@ async def start_rpsls_command_handler(message: Message):
 
         else:
             logger.debug("Getting player_1 id")
-            player_1_id = redis_connection.hget(game_name, 'player_1')
+            player_1_id = redis_connection.hget(game_name, "player_1")
 
             logger.debug(f"Getting player_1 username by id: {player_1_id}")
-            player_1_username = redis_connection.get(
-                f"{player_1_id}_username"
-            )
+            player_1_username = redis_connection.get(f"{player_1_id}_username")
 
             logger.debug("Setting player_2 data, game data and player_1 game data")
             pipe = redis_connection.pipeline()
             (
                 pipe.hset(game_name, mapping={"player_2": user_id})
                 .set(f"{user_id}_username", username)
-                .set(f"{message.chat.id}_{user_id}_rpsls_game_name", game_name, ex=RPSLS_GAME_ROUND_TIMER)
-                .set(f"{message.chat.id}_{player_1}_rpsls_game_name", game_name, ex=RPSLS_GAME_ROUND_TIMER)
+                .set(
+                    f"{message.chat.id}_{user_id}_rpsls_game_name",
+                    game_name,
+                    ex=RPSLS_GAME_ROUND_TIMER,
+                )
+                .set(
+                    f"{message.chat.id}_{player_1}_rpsls_game_name",
+                    game_name,
+                    ex=RPSLS_GAME_ROUND_TIMER,
+                )
             )
             pipe.execute()
 
@@ -118,13 +137,15 @@ async def start_rpsls_command_handler(message: Message):
                 RPSLS_GAME_STARTED_MESSAGE.format(
                     user_1=player_1_username, user_2=username
                 ),
-                reply_markup=rpsls_kb()
+                reply_markup=rpsls_kb(),
             )
 
             logger.debug(f"Sleeping for {RPSLS_GAME_ROUND_TIMER - 1} sec")
             await asyncio.sleep(RPSLS_GAME_ROUND_TIMER - 1)
 
-            logger.debug(f"Checking if game: {game_name} still exists after second player join.")
+            logger.debug(
+                f"Checking if game: {game_name} still exists after second player join."
+            )
             game_exists = redis_connection.exists(game_name)
             if game_exists:
                 logger.debug(f"Game: {game_name} exists after second player join.")

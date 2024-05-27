@@ -1,6 +1,5 @@
-from .models import Group, User, GroupModerator, RPSLSStats
-from .base import engine, Base, async_session
-
+from .base import Base, async_session, engine
+from .models import Group, GroupModerator, RPSLSStats, User
 
 __all__ = [
     "engine",

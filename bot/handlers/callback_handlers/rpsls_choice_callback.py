@@ -1,18 +1,26 @@
+from time import time
+
+from aiogram.types import BufferedInputFile, CallbackQuery
 from sqlalchemy import update
 from sqlalchemy.exc import IntegrityError
-from time import time
-from utils import redis_connection
-from aiogram.types import CallbackQuery, BufferedInputFile
-from helpers import eval_gif_path, eval_result_string, get_username_or_name
-from games.rpsls import Rock, Paper, Scissors, Spock, Lizard  # Needed for evaluating by eval()
-from db import async_session, RPSLSStats
-from settings import RPSLS_START_COMMAND, logger, NGINX_STATIC
-from messages import (
-    OOPS_ERROR_MESSAGE,
-    CHOICE_RENEW_MESSAGE,
-    CHOICE_MADE_MESSAGE,
-    PREVIOUS_CALLBACK_MESSAGE_CLICK
+
+from db import RPSLSStats, async_session
+from games.rpsls import (  # Needed for evaluating by eval()
+    Lizard,
+    Paper,
+    Rock,
+    Scissors,
+    Spock,
 )
+from helpers import eval_gif_path, eval_result_string, get_username_or_name
+from messages import (
+    CHOICE_MADE_MESSAGE,
+    CHOICE_RENEW_MESSAGE,
+    OOPS_ERROR_MESSAGE,
+    PREVIOUS_CALLBACK_MESSAGE_CLICK,
+)
+from settings import NGINX_STATIC, RPSLS_START_COMMAND, logger
+from utils import redis_connection
 
 
 async def rpsls_choice_callback_handler(callback_query: CallbackQuery):
@@ -54,7 +62,9 @@ async def rpsls_choice_callback_handler(callback_query: CallbackQuery):
             logger.debug("Getting player choice and it's expire time")
             pipe = redis_connection.pipeline()
             current_player_choice_string = player_choice_string.format(user_id=user_id)
-            pipe.get(current_player_choice_string).expiretime(current_player_choice_string)
+            pipe.get(current_player_choice_string).expiretime(
+                current_player_choice_string
+            )
             player_choice, player_choice_expires = pipe.execute()
 
             if player_choice_expires < 0:
@@ -73,26 +83,38 @@ async def rpsls_choice_callback_handler(callback_query: CallbackQuery):
 
             callback_data = callback_query.data
             logger.debug(f"{callback_data}: callback data, setting to redis")
-            redis_connection.set(current_player_choice_string, callback_data, ex=player_choice_expires)
+            redis_connection.set(
+                current_player_choice_string, callback_data, ex=player_choice_expires
+            )
 
             if player_choice:
-                logger.debug(f"{player_choice}: choice is already made. Renew message sent")
-                await callback_query.message.answer(CHOICE_RENEW_MESSAGE.format(username))
+                logger.debug(
+                    f"{player_choice}: choice is already made. Renew message sent"
+                )
+                await callback_query.message.answer(
+                    CHOICE_RENEW_MESSAGE.format(username)
+                )
 
             else:
                 logger.debug(f"{player_choice}: no previous choice")
-                await callback_query.message.answer(CHOICE_MADE_MESSAGE.format(username))
+                await callback_query.message.answer(
+                    CHOICE_MADE_MESSAGE.format(username)
+                )
 
-                logger.debug(f"Getting player ids from game info to check if there are two player choices")
+                logger.debug(
+                    f"Getting player ids from game info to check if there are two player choices"
+                )
                 player_1_id = game.get("player_1")
                 player_2_id = game.get("player_2")
 
-                logger.debug(f"Player_1_id={player_1_id}, Player_2_id={player_2_id}, Chat: {chat_id} getting choices")
+                logger.debug(
+                    f"Player_1_id={player_1_id}, Player_2_id={player_2_id}, Chat: {chat_id} getting choices"
+                )
                 pipe = redis_connection.pipeline()
                 (
-                    pipe
-                    .get(player_choice_string.format(user_id=player_1_id))
-                    .get(player_choice_string.format(user_id=player_2_id))
+                    pipe.get(player_choice_string.format(user_id=player_1_id)).get(
+                        player_choice_string.format(user_id=player_2_id)
+                    )
                 )
                 player_1_choice, player_2_choice = pipe.execute()
 
@@ -104,10 +126,7 @@ async def rpsls_choice_callback_handler(callback_query: CallbackQuery):
                     redis_connection.delete(game_name)
 
                     pipe = redis_connection.pipeline()
-                    (
-                        pipe.get(f"{player_1_id}_username")
-                        .get(f"{player_2_id}_username")
-                    )
+                    (pipe.get(f"{player_1_id}_username").get(f"{player_2_id}_username"))
                     player_1_username, player_2_username = pipe.execute()
                     logger.debug(
                         f"Getting players usernames: Player_1: {player_1_username}, Player_2: {player_2_username}"
@@ -118,26 +137,38 @@ async def rpsls_choice_callback_handler(callback_query: CallbackQuery):
                     await callback_query.message.answer("Вычисляем...")
 
                     logger.debug("Evaluating player chocies as python classes")
-                    player_1_choice = eval(player_1_choice.format(player_1_id, player_1_username))
-                    player_2_choice = eval(player_2_choice.format(player_2_id, player_2_username))
+                    player_1_choice = eval(
+                        player_1_choice.format(player_1_id, player_1_username)
+                    )
+                    player_2_choice = eval(
+                        player_2_choice.format(player_2_id, player_2_username)
+                    )
 
                     logger.debug("Evaluating winner through '==' comparison ")
                     win_fig, loose_fig = player_1_choice == player_2_choice
 
-                    logger.debug(f"win_fig={win_fig}, loose_fig={loose_fig}. Evaluating result_message")
+                    logger.debug(
+                        f"win_fig={win_fig}, loose_fig={loose_fig}. Evaluating result_message"
+                    )
                     result_message = eval_result_string(win_fig, loose_fig)
                     logger.info(result_message)
 
                     logger.debug(f"Evaluating result gif path.")
                     result_gif_path = eval_gif_path(win_fig, loose_fig)
                     if NGINX_STATIC:
-                        await callback_query.message.bot.send_animation(chat_id, result_gif_path)
+                        await callback_query.message.bot.send_animation(
+                            chat_id, result_gif_path
+                        )
                     else:
                         try:
                             logger.debug(f"Trying to open {result_gif_path}")
                             with open(result_gif_path, "rb") as file:
-                                gif = BufferedInputFile(file.read(), filename="result.gif")
-                            await callback_query.message.bot.send_animation(chat_id, gif)
+                                gif = BufferedInputFile(
+                                    file.read(), filename="result.gif"
+                                )
+                            await callback_query.message.bot.send_animation(
+                                chat_id, gif
+                            )
                             logger.debug("Success")
                         except IOError:
                             logger.error(
@@ -150,8 +181,7 @@ async def rpsls_choice_callback_handler(callback_query: CallbackQuery):
                     logger.debug("Deleting players choices and game name")
                     pipe = redis_connection.pipeline()
                     (
-                        pipe
-                        .delete(player_choice_string.format(user_id=player_1_id))
+                        pipe.delete(player_choice_string.format(user_id=player_1_id))
                         .delete(player_choice_string.format(user_id=player_2_id))
                         .delete(game_name_key_string.format(user_id=player_1_id))
                         .delete(game_name_key_string.format(user_id=player_2_id))
@@ -177,7 +207,9 @@ async def rpsls_choice_callback_handler(callback_query: CallbackQuery):
                                         f"Stats are updated for players: {win_fig.user_id}, {loose_fig.user_id}"
                                     )
                                 except IntegrityError as e:
-                                    logger.error(f"Something wrong with updating RPSLStats: {e}")
+                                    logger.error(
+                                        f"Something wrong with updating RPSLStats: {e}"
+                                    )
                     else:
                         logger.info(
                             f"{player_1_username}({player_1_id}) - {player_2_username}({player_2_id}) "

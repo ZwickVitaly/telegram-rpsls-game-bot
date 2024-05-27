@@ -1,14 +1,14 @@
 import os
 from os import getenv
-from loguru import logger
 
+from loguru import logger
 
 # Set DEBUG for sqlite database and advanced logging
 DEBUG = os.getenv("DEBUG", "0") == "1"
 
 # logging configure
 logger.add(
-    'logs/debug_logs.log' if DEBUG else 'logs/bot.log',
+    "logs/debug_logs.log" if DEBUG else "logs/bot.log",
     rotation="00:00:00",
     level="DEBUG" if DEBUG else "INFO",
 )
@@ -30,18 +30,15 @@ DATABASES = {
         "port": getenv("POSTGRES_PORT"),
         "db_name": getenv("POSTGRES_DB"),
         "default_user_name": "admin",
-        "driver": "postgresql+asyncpg"
+        "driver": "postgresql+asyncpg",
     },
     # Configured only for SQLITE
-    "debug": {
-        "path": "database.db",
-        "driver": "sqlite+aiosqlite"
-    }
+    "debug": {"path": "database.db", "driver": "sqlite+aiosqlite"},
 }
 
 
 # Set True if you want webhook bot. Don't forget to edit variables down below
-WEBHOOK_DISPATCHER = getenv("WEBHOOKS", "0") == "1"
+WEBHOOK_DISPATCHER = False
 
 # Secret key to verify telegram messages
 WEBHOOK_SECRET_TOKEN = getenv("WEBHOOK_SECRET_TOKEN")
@@ -88,8 +85,11 @@ THROTTLE_TIMEOUT = 30
 # Only group bot reply to private message
 BOT_OWNER = os.getenv("BOT_OWNER") or ""
 logger.info(f"Bot owner: {BOT_OWNER}")
-BOT_OWNER_MESSAGE = f"\n{'Чтобы добавить бота себе в чат напиши ' if BOT_OWNER else ''} {BOT_OWNER}"\
-    if BOT_OWNER else ''
+BOT_OWNER_MESSAGE = (
+    f"\n{'Чтобы добавить бота себе в чат напиши ' if BOT_OWNER else ''} {BOT_OWNER}"
+    if BOT_OWNER
+    else ""
+)
 
 
 # Redis game index name

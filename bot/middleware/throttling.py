@@ -1,25 +1,23 @@
-from typing import Callable, Any, Awaitable
-
-from aiogram.types import TelegramObject, Message, CallbackQuery
+from typing import Any, Awaitable, Callable
 
 from aiogram import BaseMiddleware
+from aiogram.types import CallbackQuery, Message, TelegramObject
 from redis import StrictRedis
 
-from helpers import try_delete_message, get_username_or_name
-
+from helpers import get_username_or_name, try_delete_message
 from settings import logger
 
 
 class ThrottlingRedisMiddleware(BaseMiddleware):
 
     def __init__(
-            self,
-            rate_limit: int,
-            time_limit: int,
-            redis: StrictRedis,
-            prefix: str = "throttle",
-            message: str = f"Throttled",
-            timeout: int = 0,
+        self,
+        rate_limit: int,
+        time_limit: int,
+        redis: StrictRedis,
+        prefix: str = "throttle",
+        message: str = f"Throttled",
+        timeout: int = 0,
     ):
         if rate_limit <= 0 or time_limit <= 0:
             raise ValueError(
@@ -48,12 +46,16 @@ class ThrottlingRedisMiddleware(BaseMiddleware):
 
             logger.debug("Checking interaction rate is lower than rate limit")
             if int(throttle) == self.rate_limit:
-                logger.info(f"User: {event.from_user.id} is throttled for {self.time_limit}s")
+                logger.info(
+                    f"User: {event.from_user.id} is throttled for {self.time_limit}s"
+                )
                 pipe = self.redis.pipeline()
                 pipe.incr(key).expire(key, self.time_limit)
                 pipe.execute()
                 username = get_username_or_name(event)
-                await event.bot.send_message(event.chat.id, self.message.format(username))
+                await event.bot.send_message(
+                    event.chat.id, self.message.format(username)
+                )
                 if not isinstance(event, CallbackQuery):
                     await try_delete_message(event)
             elif int(throttle) > self.rate_limit:
@@ -61,7 +63,9 @@ class ThrottlingRedisMiddleware(BaseMiddleware):
                 if not isinstance(event, CallbackQuery):
                     await try_delete_message(event)
             else:
-                logger.debug(f"User: {event.from_user.id} is not throttled. Passing response.")
+                logger.debug(
+                    f"User: {event.from_user.id} is not throttled. Passing response."
+                )
                 pipe = self.redis.pipeline()
                 pipe.incr(key).expire(key, self.time_limit)
                 pipe.execute()

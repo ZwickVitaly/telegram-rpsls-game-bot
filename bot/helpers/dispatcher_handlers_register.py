@@ -1,9 +1,11 @@
-from aiogram import Dispatcher
 from typing import Any
+
+from aiogram import Dispatcher
 
 
 def message_handlers_register(
-        dp: Dispatcher, handlers_list: list[tuple[Any | Any | dict] | list[tuple[Any | dict]]]
+    dp: Dispatcher,
+    handlers_list: list[tuple[Any | Any | dict] | list[tuple[Any | dict]]],
 ) -> None:
     for handler in handlers_list:
         if isinstance(handler[1], dict):
@@ -13,7 +15,8 @@ def message_handlers_register(
 
 
 def callback_handlers_register(
-        dp: Dispatcher, handlers_list: list[tuple[Any | Any | dict] | list[tuple[Any | dict]]]
+    dp: Dispatcher,
+    handlers_list: list[tuple[Any | Any | dict] | list[tuple[Any | dict]]],
 ) -> None:
     for handler in handlers_list:
         if isinstance(handler[1], dict):

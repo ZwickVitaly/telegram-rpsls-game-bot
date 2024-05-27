@@ -1,7 +1,9 @@
 from aiogram.types import Message
+
 from helpers import is_group, try_delete_message
-from messages import ONLY_GROUP_REPLY_MESSAGE, HELLO_WORLD_MESSAGE
+from messages import HELLO_WORLD_MESSAGE, ONLY_GROUP_REPLY_MESSAGE
 from settings import logger
+
 
 async def start_command_handler_BASIC(message: Message):
     await try_delete_message(message)
@@ -11,3 +13,4 @@ async def start_command_handler_BASIC(message: Message):
     else:
         logger.debug(f"Basic /start command answer to user: {message.from_user.id}")
         await message.answer(HELLO_WORLD_MESSAGE)
+

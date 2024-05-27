@@ -1,8 +1,13 @@
-from db import User, Group, RPSLSStats, async_session
 from aiogram.types import Message
 from sqlalchemy import select
-from helpers import is_group, get_username_or_name, try_delete_message
-from messages import ONLY_GROUP_REPLY_MESSAGE, ALREADY_REGISTERED_MESSAGE, NEW_PLAYER_REGISTER_MESSAGE
+
+from db import RPSLSStats, User, async_session
+from helpers import get_username_or_name, is_group, try_delete_message
+from messages import (
+    ALREADY_REGISTERED_MESSAGE,
+    NEW_PLAYER_REGISTER_MESSAGE,
+    ONLY_GROUP_REPLY_MESSAGE,
+)
 from settings import logger
 
 
@@ -19,8 +24,7 @@ async def register_command_handler(message: Message):
                 username = get_username_or_name(message)
                 user = (
                     await session.execute(
-                        select(User)
-                        .where(
+                        select(User).where(
                             User.id == message.from_user.id,
                         )
                     )
@@ -41,4 +45,3 @@ async def register_command_handler(message: Message):
                 else:
                     logger.info(f"User: {message.from_user.id} is already in database")
                     await message.answer(ALREADY_REGISTERED_MESSAGE.format(username))
-

@@ -1,7 +1,8 @@
-from redis import StrictRedis
-from settings import DEBUG
 from os import getenv
 
+from redis import StrictRedis
+
+from settings import DEBUG
 
 if DEBUG:
     REDIS_HOST = "localhost"

@@ -119,6 +119,6 @@ RPC_FILTER_LIST = [
     Paper.string_callback(),
     Scissors.string_callback(),
     Lizard.string_callback(),
-    Spock.string_callback()
+    Spock.string_callback(),
 ]
 logger.debug(f"Formed figures string callbacks: {' | '.join(RPC_FILTER_LIST)}")

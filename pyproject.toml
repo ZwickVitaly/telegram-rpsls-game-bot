@@ -17,6 +17,9 @@ emoji = "^2.12.1"
 redis = "^5.0.4"
 loguru = "^0.7.2"
 markupsafe = "^2.1.5"
+black = "^24.4.2"
+mypy = "^1.10.0"
+isort = "^5.13.2"
 
 
 [build-system]

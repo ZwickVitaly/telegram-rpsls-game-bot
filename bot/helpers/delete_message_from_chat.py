@@ -1,6 +1,5 @@
-from aiogram.types import Message
-
 from aiogram.exceptions import TelegramBadRequest
+from aiogram.types import Message
 
 from settings import logger
 

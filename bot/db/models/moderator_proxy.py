@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, DateTime, ForeignKey, BigInteger
+from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Integer
 from sqlalchemy.sql import func
 
 from ..base import Base
@@ -11,5 +11,3 @@ class GroupModerator(Base):
     group_id = Column(BigInteger, ForeignKey("groups.id", ondelete="NO ACTION"))
     moderator = Column(BigInteger, ForeignKey("users.id", ondelete="NO ACTION"))
     added = Column(DateTime(timezone=True), server_default=func.now())
-
-
