@@ -41,7 +41,7 @@ bot = Bot(BOT_TOKEN, parse_mode=ParseMode.HTML)
 
 asyncio.run(
     bot.set_webhook(
-        f"{BASE_WEBHOOK_URL}{WEBHOOK_PATH}", secret_token=WEBHOOK_SECRET_TOKEN
+        f"{BASE_WEBHOOK_URL}/{WEBHOOK_PATH}", secret_token=WEBHOOK_SECRET_TOKEN
     )
 )
 

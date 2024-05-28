@@ -38,10 +38,12 @@ DATABASES = {
 
 
 # Set True if you want webhook bot. Don't forget to edit variables down below
-WEBHOOK_DISPATCHER = False
+WEBHOOK_DISPATCHER = getenv("WEBHOOKS") == "1"
 
 # Secret key to verify telegram messages
 WEBHOOK_SECRET_TOKEN = getenv("WEBHOOK_SECRET_TOKEN")
+if not WEBHOOK_SECRET_TOKEN:
+    raise ValueError("No token = no bot.")
 
 
 # Web server host. better "0.0.0.0" if used in container

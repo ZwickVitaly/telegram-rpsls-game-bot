@@ -46,30 +46,14 @@ services:
       - "main.py"
     restart: on-failure
     volumes:
-      - ./static:/bot/static
+      - /var/www/zwick.fun/html/static:/bot/static
       - ./app_data/logs/bot:/bot/logs
     env_file:
       - .env
+    ports:
+      - "8080:8080"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-
-  nginx:
-      container_name: nginx
-      restart: on-failure
-      image: nginx
-      env_file:
-        - .env
-      ports:
-        - "80:80"
-      volumes:
-        - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
-        - ./app_data/logs/nginx:/var/log/nginx
-        - ./static:/www/data/static
-      depends_on:
-        postgres:
-          condition: service_healthy
-        redis:
-          condition: service_healthy
